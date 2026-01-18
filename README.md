@@ -1,4 +1,8 @@
 # distributed-event-processor
+![CI](https://github.com/aimov6464/distributed-event-processor/actions/workflows/main.yml/badge.svg)
+
+Java 25 · Maven · Kafka · Docker
+> Note: CI runs on Amazon Corretto 25 (non-LTS). Production deployments may prefer LTS versions (e.g. Java 21).
 
 Distributed event processing scaffold for Apache Spark Structured Streaming 3.5+.
 The goal is to provide a backend-only foundation for building effectively-once pipelines
