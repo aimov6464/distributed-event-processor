@@ -76,3 +76,6 @@ $SPARK_HOME/bin/spark-submit \
 - Schema is fixed (`eventId`, `userId`, `amount`, `eventType`, `eventTime`) and requires code/config changes for evolution.
 - Window aggregations are append/update-only; changing window length requires checkpoint reset.
 - Checkpoint directories must be reset when changing dedupe keys, window definitions, or aggregation logic.
+
+## License
+This project is licensed under the Apache License 2.0.
