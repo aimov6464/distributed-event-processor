@@ -5,6 +5,7 @@ import com.typesafe.config.ConfigFactory;
 import org.apache.spark.sql.streaming.StreamingQuery;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.util.concurrent.TimeoutException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -13,7 +14,7 @@ class ModeAStreamingJobTest {
 
     @Test
     void jobConfigLoadsFromCustomConfig() {
-        Config cfg = ConfigFactory.parseResources("application-test.conf");
+        Config cfg = ConfigFactory.parseResources("application-test.conf").resolve();
         ModeAStreamingJob.JobConfig jobConfig = ModeAStreamingJob.JobConfig.fromConfig(cfg);
         assertEquals("test-app", jobConfig.appName());
         assertEquals("test:9092", jobConfig.kafkaBootstrapServers());
@@ -25,7 +26,7 @@ class ModeAStreamingJobTest {
         assertEquals("file:///tmp/test-parquet", jobConfig.parquetPath());
         assertEquals("out-test", jobConfig.sinkKafkaTopic());
         assertEquals("file:///tmp/test-checkpoint", jobConfig.checkpointDir());
-        assertEquals(30, jobConfig.triggerInterval());
+        assertEquals(Duration.ofSeconds(30), jobConfig.triggerInterval());
     }
 
     @Test

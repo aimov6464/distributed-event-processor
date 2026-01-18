@@ -38,7 +38,11 @@ public final class ModeAStreamingJob {
                 "from_json(json, 'eventId STRING, eventTime TIMESTAMP, payload STRING') as data"
         ).select("data.*");
 
-        Dataset<Row> deduped = parsed
+        Dataset<Row> validated = parsed
+                .filter("eventId is not null")
+                .filter("eventTime is not null");
+
+        Dataset<Row> deduped = validated
                 .withWatermark("eventTime", config.watermarkDelay())
                 .dropDuplicates("eventId");
 
@@ -58,7 +62,7 @@ public final class ModeAStreamingJob {
             String parquetPath,
             String sinkKafkaTopic,
             String checkpointDir,
-            long triggerInterval
+            long triggerIntervalSeconds
 
     ) {
         static JobConfig fromTypesafe() {
@@ -74,6 +78,9 @@ public final class ModeAStreamingJob {
             Config sparkCfg = config.getConfig("spark");
             Config modeCfg = config.getConfig("modeA");
             Config sinkCfg = modeCfg.getConfig("sink");
+            String checkpointDir = modeCfg.hasPath("checkpointDir")
+                    ? modeCfg.getString("checkpointDir")
+                    : sparkCfg.getString("checkpointBaseDir") + "/mode-a";
             return new JobConfig(
                     sparkCfg.getString("appName"),
                     modeCfg.getConfig("input").getString("kafkaBootstrapServers"),
@@ -84,9 +91,17 @@ public final class ModeAStreamingJob {
                     SinkType.valueOf(sinkCfg.getString("type").toUpperCase()),
                     sinkCfg.getString("parquetPath"),
                     sinkCfg.getString("kafkaTopic"),
-                    sparkCfg.getString("checkpointDir"),
+                    checkpointDir,
                     sinkCfg.getLong("triggerIntervalSeconds")
             );
+        }
+
+        Duration triggerInterval() {
+            return Duration.ofSeconds(triggerIntervalSeconds);
+        }
+
+        String triggerIntervalString() {
+            return String.format("%d seconds", triggerIntervalSeconds);
         }
     }
 
@@ -126,7 +141,7 @@ public final class ModeAStreamingJob {
                         .format("parquet")
                         .option("path", config.parquetPath())
                         .option("checkpointLocation", config.checkpointDir())
-                        .trigger(Trigger.ProcessingTime(config.triggerInterval()))
+                        .trigger(Trigger.ProcessingTime(config.triggerIntervalString()))
                         .outputMode(OutputMode.Append())
                         .start();
             }
@@ -140,7 +155,7 @@ public final class ModeAStreamingJob {
                         .option("kafka.bootstrap.servers", config.kafkaBootstrapServers())
                         .option("topic", config.sinkKafkaTopic())
                         .option("checkpointLocation", config.checkpointDir())
-                        .trigger(Trigger.ProcessingTime(config.triggerInterval()))
+                        .trigger(Trigger.ProcessingTime(config.triggerIntervalString()))
                         .outputMode(OutputMode.Append())
                         .start();
             }
